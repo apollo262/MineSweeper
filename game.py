@@ -33,13 +33,13 @@ class Game:
         self.width = width
         self.height = height
         self.fps = fps
-        self.surface = pygame.display.set_mode((self.width, self.height))
+        self.screen = pygame.display.set_mode((self.width, self.height))
         self.counter = 0
 
     def debug(self, msg, color=Color.BLACK, fontsize=36):
         sysfont = pygame.font.SysFont(None, fontsize)
         image = sysfont.render(msg, True, color)
-        self.surface.blit(image, (10, self.height-fontsize))
+        self.screen.blit(image, (10, self.height-fontsize))
 
     def event(self, event):
         pass
@@ -49,6 +49,6 @@ class Game:
 
     def grid(self, interval=10):
         for xpos in range(0, self.width, interval):
-            pygame.draw.line(self.surface, 0x000000, (xpos,0), (xpos,self.height))
+            pygame.draw.line(self.screen, 0x000000, (xpos,0), (xpos,self.height))
         for ypos in range(0, self.height, interval):
-            pygame.draw.line(self.surface, 0x000000, (0,ypos), (self.width,ypos))
+            pygame.draw.line(self.screen, 0x000000, (0,ypos), (self.width,ypos))
