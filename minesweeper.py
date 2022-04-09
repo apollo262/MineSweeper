@@ -15,7 +15,6 @@ class Cell:
     
     def __init__(self, board, x, y):
         self.board = board
-        self.surface = board.game.surface
         self.status = Status.EMPTY
         self.x = x
         self.y = y
@@ -54,19 +53,21 @@ class Cell:
         return len([cell for cell in self.neighbors() if cell.status & Status.BOMB])
 
     def draw(self):
+        surface = self.board.game.surface
+
         if self.status & Status.BOMB:
-            pygame.draw.ellipse(self.surface, Color.RED, self.rect.inflate(-(Cell.SIZE/2), -(Cell.SIZE/2)))
+            pygame.draw.ellipse(surface, Color.RED, self.rect.inflate(-(Cell.SIZE/2), -(Cell.SIZE/2)))
         elif self.bomb_neighbors() > 0:
             font = pygame.font.SysFont(None, 36)
             num_image = font.render("{}".format(self.bomb_neighbors()), True, Color.YELLOW)
-            self.surface.blit(num_image, (self.x*Cell.SIZE+10, self.y*Cell.SIZE+10))
+            surface.blit(num_image, (self.x*Cell.SIZE+10, self.y*Cell.SIZE+10))
 
         if not self.status & Status.OPEN:
             if not (self.board.lose and (self.status & Status.BOMB)):
             # if not self.status & Status.BOMB:
-                pygame.draw.rect(self.surface, Color.LIGHT_GRAY, self.rect)
+                pygame.draw.rect(surface, Color.LIGHT_GRAY, self.rect)
                 if self.status & Status.FLAG:
-                    pygame.draw.ellipse(self.surface, Color.GREEN, self.rect.inflate(-(Cell.SIZE/2), -(Cell.SIZE/2)))
+                    pygame.draw.ellipse(surface, Color.GREEN, self.rect.inflate(-(Cell.SIZE/2), -(Cell.SIZE/2)))
 
 def randpos():
     return randint(0, Board.COLS-1), randint(0, Board.ROWS-1)
@@ -99,11 +100,17 @@ class Board:
         if 0 <= x < Board.COLS and 0 <= y < Board.ROWS:
             return self.cells[y][x]
 
-    def count(self, status):
+    def count(self, status, op='=='):
         count = 0
         for y in range(Board.ROWS):
             for x in range(Board.COLS):
-                if self.cell(x, y).status == status:
+                if op == '==':
+                    match = self.cell(x, y).status == status
+                elif op == '&':
+                    match = self.cell(x, y).status & status
+                elif status is None:
+                    match = True
+                if match:
                     count += 1
         return count
 
@@ -133,7 +140,7 @@ class Board:
         elif self.lose:
             self.draw_message("LOSE")
 
-        self.game.debug("cells:{}/{} bombs:{}".format(self.count(Status.OPEN), self.count(Status.EMPTY)+self.count(Status.OPEN), self.count(Status.BOMB)), color=Color.WHITE)
+        self.game.debug("cells:{}/{} bombs:{}".format(self.count(Status.OPEN, op='&'), self.count(None), self.count(Status.BOMB, op='&')),color=Color.WHITE)
 
 def coordinate2pos(pos):
     return floor(pos[0]/Cell.SIZE), floor(pos[1]/Cell.SIZE)
