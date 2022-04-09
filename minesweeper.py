@@ -30,10 +30,10 @@ class Cell:
                 if cell is not None and cell != self:
                     neighbors.append(cell)
         return neighbors
-    
+
     def __eq__(self, cell):
         return self.x == cell.x and self.y == cell.y
-    
+
     def __ne__(self, cell):
         return not self.__eq__(cell)
 
@@ -68,9 +68,6 @@ class Board:
     BOMBS = 20
     COLS = 20
     ROWS = 15
-    CELLS = COLS*ROWS
-    WIDTH = COLS*Cell.SIZE
-    HEIGHT = ROWS*Cell.SIZE
 
     def __init__(self, game):
         self.game = game
@@ -82,11 +79,11 @@ class Board:
     @property
     def lose(self):
         return self.count(Status.BOMB|Status.OPENED) > 0
-    
+
     @property
     def win(self):
-        return self.count(Status.OPENED) == Board.CELLS-Board.BOMBS
-    
+        return self.count(Status.OPENED) == (Board.COLS*Board.ROWS)-Board.BOMBS
+
     @property
     def in_game(self):
         return not self.lose and not self.win
@@ -104,16 +101,16 @@ class Board:
         return count
 
     def draw_grid(self):
-        for index in range(0, Board.WIDTH, Cell.SIZE):
-            pygame.draw.line(self.game.surface, Color.GRAY, (index, 0), (index, Board.HEIGHT))
-        for index in range(0, Board.HEIGHT, Cell.SIZE):
-            pygame.draw.line(self.game.surface, Color.GRAY, (0, index), (Board.WIDTH, index))
+        for index in range(0, MineSweeper.WIDTH, Cell.SIZE):
+            pygame.draw.line(self.game.surface, Color.GRAY, (index, 0), (index, MineSweeper.HEIGHT))
+        for index in range(0, MineSweeper.HEIGHT, Cell.SIZE):
+            pygame.draw.line(self.game.surface, Color.GRAY, (0, index), (MineSweeper.WIDTH, index))
 
     def draw_message(self, message):
         font = pygame.font.SysFont(None, 72)
         render = font.render(message, True, Color.CYAN)
         rect = render.get_rect()
-        rect.center = (Board.WIDTH/2, Board.HEIGHT/2)
+        rect.center = (MineSweeper.WIDTH/2, MineSweeper.HEIGHT/2)
         self.game.surface.blit(render, rect.topleft)
 
     def draw(self):
@@ -123,7 +120,7 @@ class Board:
                 self.cell(x, y).draw()
 
         self.draw_grid()
-        
+
         if self.win:
             self.draw_message("WIN")
         elif self.lose:
@@ -135,8 +132,17 @@ def coordinate2pos(pos):
     return floor(pos[0]/Cell.SIZE), floor(pos[1]/Cell.SIZE)
 
 class MineSweeper(Game):
+    WIDTH = None
+    HEIGHT = None
+
+    @classmethod
+    def update(cls):
+        cls.WIDTH = Board.COLS*Cell.SIZE
+        cls.HEIGHT = Board.ROWS*Cell.SIZE
+
     def __init__(self):
-        super().__init__(Board.WIDTH, Board.HEIGHT, "MineSweeper", fps=10)
+        MineSweeper.update()
+        super().__init__(MineSweeper.WIDTH, MineSweeper.HEIGHT, "MineSweeper", fps=10)
         self.board = Board(self)
 
     def event(self, event):
@@ -146,5 +152,5 @@ class MineSweeper(Game):
                 print('({},{}) => ({},{})'.format(event.pos[0], event.pos[1], x, y))
                 self.board.cell(x, y).open()
 
-    def loop(self):
+    def draw(self):
         self.board.draw()

@@ -1,7 +1,7 @@
 import pygame
 from argparse import ArgumentParser
 from pygame.locals import QUIT,KEYDOWN,K_ESCAPE
-from minesweeper import MineSweeper
+from minesweeper import MineSweeper,Board
 
 def is_quit(event):
     if event.type == QUIT:
@@ -11,11 +11,6 @@ def is_quit(event):
             return True
     return False
 
-def parse_args():
-    parser = ArgumentParser()
-    parser.add_argument('--mine', '-M', action='store_true')
-    return parser.parse_args()
-
 def loop(game):
     clock = pygame.time.Clock()
     while True:
@@ -24,13 +19,24 @@ def loop(game):
                 return
             game.event(event)
 
-        game.loop()
+        game.draw()
         game.counter += 1
         pygame.display.update()
         clock.tick(game.fps)
 
+def parse_args():
+    parser = ArgumentParser()
+    parser.add_argument('--bombs', '-b', type=int, default=20)
+    parser.add_argument('--cols', '-c', type=int, default=20)
+    parser.add_argument('--rows', '-r', type=int, default=15)
+    return parser.parse_args()
+
 def main():
     args = parse_args()
+    Board.BOMBS = args.bombs
+    Board.COLS = args.cols
+    Board.ROWS = args.rows
+    
     game = MineSweeper()
     loop(game)
     pygame.quit()

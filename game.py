@@ -44,7 +44,7 @@ class Game:
     def event(self, event):
         pass
 
-    def loop(self):
+    def draw(self):
         pass
 
     def grid(self, interval=10):
