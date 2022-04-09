@@ -2,22 +2,24 @@ import pygame
 from game import Color,Game
 from math import floor
 from random import randint
-from pygame.locals import MOUSEBUTTONDOWN
+from pygame.locals import MOUSEBUTTONDOWN,Rect
 
 class Status:
     EMPTY = 0
-    OPENED = 1<<0
-    BOMB   = 1<<1
+    OPEN = 1<<0
+    BOMB = 1<<1
+    FLAG = 1<<2
 
 class Cell:
     SIZE = 50
+    
     def __init__(self, board, x, y):
         self.board = board
         self.surface = board.game.surface
         self.status = Status.EMPTY
         self.x = x
         self.y = y
-        self.rect = (self.x*Cell.SIZE, self.y*Cell.SIZE, Cell.SIZE, Cell.SIZE)
+        self.rect = Rect(self.x*Cell.SIZE, self.y*Cell.SIZE, Cell.SIZE, Cell.SIZE)
 
     def __str__(self):
         return '({},{}) status:{}'.format(self.x, self.y, self.status)
@@ -38,28 +40,33 @@ class Cell:
         return not self.__eq__(cell)
 
     def open(self):
-        if self.status & Status.OPENED:
+        if self.status & Status.OPEN:
             return
-        self.status |= Status.OPENED
+        self.status |= Status.OPEN
         if not self.status & Status.BOMB and self.bomb_neighbors() == 0:
             for neighbor in self.neighbors():
                 neighbor.open()
+
+    def flag(self):
+        self.status ^= Status.FLAG
 
     def bomb_neighbors(self):
         return len([cell for cell in self.neighbors() if cell.status & Status.BOMB])
 
     def draw(self):
         if self.status & Status.BOMB:
-            pygame.draw.ellipse(self.surface, Color.YELLOW, self.rect)
+            pygame.draw.ellipse(self.surface, Color.RED, self.rect.inflate(-(Cell.SIZE/2), -(Cell.SIZE/2)))
         elif self.bomb_neighbors() > 0:
             font = pygame.font.SysFont(None, 36)
             num_image = font.render("{}".format(self.bomb_neighbors()), True, Color.YELLOW)
             self.surface.blit(num_image, (self.x*Cell.SIZE+10, self.y*Cell.SIZE+10))
 
-        if not self.status & Status.OPENED:
+        if not self.status & Status.OPEN:
             if not (self.board.lose and (self.status & Status.BOMB)):
             # if not self.status & Status.BOMB:
                 pygame.draw.rect(self.surface, Color.LIGHT_GRAY, self.rect)
+                if self.status & Status.FLAG:
+                    pygame.draw.ellipse(self.surface, Color.GREEN, self.rect.inflate(-(Cell.SIZE/2), -(Cell.SIZE/2)))
 
 def randpos():
     return randint(0, Board.COLS-1), randint(0, Board.ROWS-1)
@@ -78,11 +85,11 @@ class Board:
 
     @property
     def lose(self):
-        return self.count(Status.BOMB|Status.OPENED) > 0
+        return self.count(Status.BOMB|Status.OPEN) > 0
 
     @property
     def win(self):
-        return self.count(Status.OPENED) == (Board.COLS*Board.ROWS)-Board.BOMBS
+        return self.count(Status.OPEN) == (Board.COLS*Board.ROWS)-Board.BOMBS
 
     @property
     def in_game(self):
@@ -126,7 +133,7 @@ class Board:
         elif self.lose:
             self.draw_message("LOSE")
 
-        self.game.debug("cells:{}/{} bombs:{}".format(self.count(Status.OPENED), self.count(Status.EMPTY)+self.count(Status.OPENED), self.count(Status.BOMB)), color=Color.WHITE)
+        self.game.debug("cells:{}/{} bombs:{}".format(self.count(Status.OPEN), self.count(Status.EMPTY)+self.count(Status.OPEN), self.count(Status.BOMB)), color=Color.WHITE)
 
 def coordinate2pos(pos):
     return floor(pos[0]/Cell.SIZE), floor(pos[1]/Cell.SIZE)
@@ -147,10 +154,13 @@ class MineSweeper(Game):
 
     def event(self, event):
         if self.board.in_game:
-            if event.type == MOUSEBUTTONDOWN and event.button == 1:
+            if event.type == MOUSEBUTTONDOWN:
                 x, y = coordinate2pos(event.pos)
                 print('({},{}) => ({},{})'.format(event.pos[0], event.pos[1], x, y))
-                self.board.cell(x, y).open()
+                if event.button == 1:
+                    self.board.cell(x, y).open()
+                elif event.button == 3:
+                    self.board.cell(x, y).flag()
 
     def draw(self):
         self.board.draw()

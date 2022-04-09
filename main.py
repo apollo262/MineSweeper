@@ -1,7 +1,7 @@
 import pygame
 from argparse import ArgumentParser
 from pygame.locals import QUIT,KEYDOWN,K_ESCAPE
-from minesweeper import MineSweeper,Board
+from minesweeper import MineSweeper,Board,Cell
 
 def is_quit(event):
     if event.type == QUIT:
@@ -29,6 +29,7 @@ def parse_args():
     parser.add_argument('--bombs', '-b', type=int, default=20)
     parser.add_argument('--cols', '-c', type=int, default=20)
     parser.add_argument('--rows', '-r', type=int, default=15)
+    parser.add_argument('--cell', '-C', type=int, default=25)
     return parser.parse_args()
 
 def main():
@@ -36,7 +37,8 @@ def main():
     Board.BOMBS = args.bombs
     Board.COLS = args.cols
     Board.ROWS = args.rows
-    
+    Cell.SIZE = args.cell
+
     game = MineSweeper()
     loop(game)
     pygame.quit()
