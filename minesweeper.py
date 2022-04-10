@@ -186,7 +186,7 @@ class MineSweeper(Game):
 
     def pos2cell(self, pos):
         x,y = floor(pos[0]/Cell.SIZE), floor(pos[1]/Cell.SIZE)
-        print('({},{}) => ({},{})'.format(pos[0], pos[1], x, y))
+        # print('({},{}) => ({},{})'.format(pos[0], pos[1], x, y))
         return self.board.cell(x, y)
 
     def event(self, event):
@@ -206,7 +206,6 @@ class MineSweeper(Game):
 
     def get_select(self):
         select = []
-        print(pygame.mouse.get_pressed())
         if pygame.mouse.get_pressed()[0] == 1:
             select.append(self.pos2cell(pygame.mouse.get_pos()))
         if pygame.mouse.get_pressed() == (1, 0, 1):
