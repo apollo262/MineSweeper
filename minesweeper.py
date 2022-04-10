@@ -2,7 +2,7 @@ import pygame
 from game import Color,Game
 from math import floor
 from random import randint
-from pygame.locals import MOUSEBUTTONDOWN,Rect
+from pygame.locals import MOUSEBUTTONDOWN,MOUSEBUTTONUP,Rect
 from pygame.locals import KEYDOWN,K_r,K_d
 
 class Status:
@@ -70,6 +70,9 @@ class Cell:
 
     def draw_cover(self, screen):
         pygame.draw.rect(screen, Color.LIGHT_GRAY, self.rect)
+        for cell in self.board.select:
+            if cell == self:
+                pygame.draw.rect(screen, Color.DARK_GRAY, self.rect)
 
     def draw_flag(self, screen):
         pygame.draw.ellipse(screen, Color.BLUE, self.inflate(0.5))
@@ -101,6 +104,7 @@ class Board:
         self.game = game
         self.debug = False
         self.reset()
+        self.select = []
     
     def reset(self):
         self.cells = [[Cell(self, x, y) for x in range(Board.COLS)] for y in range(Board.ROWS)]
@@ -166,9 +170,6 @@ class Board:
         self.game.debug("cells:{}/{} bombs:{}".format(
             self.count(Status.OPEN, op='&'), self.count(None), self.count(Status.BOMB, op='&')),color=Color.WHITE)
 
-def coordinate2pos(pos):
-    return floor(pos[0]/Cell.SIZE), floor(pos[1]/Cell.SIZE)
-
 class MineSweeper(Game):
     WIDTH = None
     HEIGHT = None
@@ -180,8 +181,13 @@ class MineSweeper(Game):
 
     def __init__(self):
         MineSweeper.update()
-        super().__init__(MineSweeper.WIDTH, MineSweeper.HEIGHT, "MineSweeper", fps=10)
+        super().__init__(MineSweeper.WIDTH, MineSweeper.HEIGHT, "MineSweeper", fps=60)
         self.board = Board(self)
+
+    def pos2cell(self, pos):
+        x,y = floor(pos[0]/Cell.SIZE), floor(pos[1]/Cell.SIZE)
+        print('({},{}) => ({},{})'.format(pos[0], pos[1], x, y))
+        return self.board.cell(x, y)
 
     def event(self, event):
         if event.type == KEYDOWN:
@@ -189,15 +195,26 @@ class MineSweeper(Game):
                 self.board.reset()
             elif event.key == K_d:
                 self.board.debug = not self.board.debug
-                
+
         if self.board.in_game:
-            if event.type == MOUSEBUTTONDOWN:
-                x, y = coordinate2pos(event.pos)
-                print('({},{}) => ({},{})'.format(event.pos[0], event.pos[1], x, y))
+            if event.type == MOUSEBUTTONUP:
+                cell = self.pos2cell(event.pos)
                 if event.button == 1:
-                    self.board.cell(x, y).open()
+                    cell.open()
                 elif event.button == 3:
-                    self.board.cell(x, y).flag()
+                    cell.flag()
+
+    def get_select(self):
+        select = []
+        print(pygame.mouse.get_pressed())
+        if pygame.mouse.get_pressed()[0] == 1:
+            select.append(self.pos2cell(pygame.mouse.get_pos()))
+        if pygame.mouse.get_pressed() == (1, 0, 1):
+            select += self.pos2cell(pygame.mouse.get_pos()).neighbors()
+        return select
 
     def draw(self):
+        if self.board.in_game:
+            self.board.select = self.get_select()
+
         self.board.draw()

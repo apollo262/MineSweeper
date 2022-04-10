@@ -25,6 +25,7 @@ class Color:
     MAGENTA = OR(RED,BLUE)
     GRAY       = MULTIPLY(WHITE,0.5)
     LIGHT_GRAY = MULTIPLY(WHITE,0.75)
+    DARK_GRAY = MULTIPLY(WHITE,0.25)
 
 class Game:
     def __init__(self, width, height, caption, fps=60):
