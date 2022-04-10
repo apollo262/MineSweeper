@@ -1,4 +1,5 @@
 import pygame
+from pygame.locals import QUIT,KEYDOWN,K_ESCAPE
 
 MAX = 255
 def OR(c1, c2):
@@ -37,11 +38,6 @@ class Game:
         self.fps = fps
         self.counter = 0
 
-    def debug(self, msg, color=Color.BLACK, fontsize=36):
-        sysfont = pygame.font.SysFont(None, fontsize)
-        image = sysfont.render(msg, True, color)
-        self.screen.blit(image, (10, self.height-fontsize))
-
     def event(self, event):
         pass
 
@@ -49,7 +45,38 @@ class Game:
         pass
 
     def grid(self, interval=10):
-        for xpos in range(0, self.width, interval):
-            pygame.draw.line(self.screen, 0x000000, (xpos,0), (xpos,self.height))
-        for ypos in range(0, self.height, interval):
-            pygame.draw.line(self.screen, 0x000000, (0,ypos), (self.width,ypos))
+        for x in range(0, self.width, interval):
+            pygame.draw.line(self.screen, 0x000000, (x,0), (x,self.height))
+        for y in range(0, self.height, interval):
+            pygame.draw.line(self.screen, 0x000000, (0,y), (self.width,y))
+
+    def debug(self, message, color=Color.BLACK, fontsize=36):
+        font = pygame.font.SysFont(None, fontsize)
+        text = font.render(message, True, color)
+        self.screen.blit(text, (10, self.height-fontsize))
+
+    def is_quit(self, event):
+        if event.type == QUIT:
+            return True
+        if event.type == KEYDOWN:
+            if event.key == K_ESCAPE:
+                return True
+        return False
+
+    def loop(self):
+        clock = pygame.time.Clock()
+        while True:
+            for event in pygame.event.get():
+                if self.is_quit(event):
+                    return
+                self.event(event)
+
+            self.draw()
+            self.counter += 1
+            pygame.display.update()
+            clock.tick(self.fps)
+
+    def main(self):
+        self.loop()
+        pygame.quit()
+
