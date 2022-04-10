@@ -1,15 +1,16 @@
 import pygame
 from game import Color,Game
 from math import floor
+from enum import Flag, auto
 from random import randint
 from pygame.locals import MOUSEBUTTONDOWN,MOUSEBUTTONUP,Rect
 from pygame.locals import KEYDOWN,K_r,K_d
 
-class Status:
+class Status(Flag):
     EMPTY = 0
-    OPEN = 1<<0
-    BOMB = 1<<1
-    FLAG = 1<<2
+    OPEN = auto()
+    BOMB = auto()
+    FLAG = auto()
 
 class Cell:
     SIZE = 50
@@ -70,7 +71,7 @@ class Cell:
 
     def draw_cover(self, screen):
         pygame.draw.rect(screen, Color.LIGHT_GRAY, self.rect)
-        for cell in self.board.select:
+        for cell in self.board.pressed:
             if cell == self:
                 pygame.draw.rect(screen, Color.DARK_GRAY, self.rect)
 
@@ -104,42 +105,35 @@ class Board:
         self.game = game
         self.debug = False
         self.reset()
-        self.select = []
     
     def reset(self):
-        self.cells = [[Cell(self, x, y) for x in range(Board.COLS)] for y in range(Board.ROWS)]
-        while self.count(Status.BOMB, op='&') < Board.BOMBS:
+        self.__cells = [[Cell(self, x, y) for x in range(Board.COLS)] for y in range(Board.ROWS)]
+        while self.select(Status.BOMB) < Board.BOMBS:
             self.cell(*randpos()).status |= Status.BOMB
+        self.pressed = []
 
     @property
     def lose(self):
-        return self.count(Status.BOMB|Status.OPEN) > 0
+        return self.select(Status.BOMB|Status.OPEN) > 0
 
     @property
     def win(self):
-        return self.count(Status.OPEN, op='&') == (Board.COLS*Board.ROWS)-Board.BOMBS
+        return self.select(Status.OPEN) == (Board.COLS*Board.ROWS)-Board.BOMBS
 
     @property
     def in_game(self):
         return not self.lose and not self.win
 
+    @property
+    def cells(self):
+        return [self.cell(x, y) for x in range(Board.COLS) for y in range(Board.ROWS)]
+
     def cell(self, x, y):
         if 0 <= x < Board.COLS and 0 <= y < Board.ROWS:
-            return self.cells[y][x]
+            return self.__cells[y][x]
 
-    def count(self, status, op='=='):
-        count = 0
-        for y in range(Board.ROWS):
-            for x in range(Board.COLS):
-                if status is None:
-                    match = True
-                elif op == '==':
-                    match = self.cell(x, y).status == status
-                elif op == '&':
-                    match = self.cell(x, y).status & status
-                if match:
-                    count += 1
-        return count
+    def select(self, status):
+        return len([cell for cell in self.cells if cell.status & status == status])
 
     def draw_grid(self):
         for index in range(0, MineSweeper.WIDTH, Cell.SIZE):
@@ -168,7 +162,7 @@ class Board:
             self.draw_message("LOSE")
 
         self.game.debug("cells:{}/{} bombs:{}".format(
-            self.count(Status.OPEN, op='&'), self.count(None), self.count(Status.BOMB, op='&')),color=Color.WHITE)
+            self.select(Status.OPEN), len(self.cells), self.select(Status.BOMB)),color=Color.WHITE)
 
 class MineSweeper(Game):
     WIDTH = None
@@ -181,7 +175,7 @@ class MineSweeper(Game):
 
     def __init__(self):
         MineSweeper.update()
-        super().__init__(MineSweeper.WIDTH, MineSweeper.HEIGHT, "MineSweeper", fps=60)
+        super().__init__(MineSweeper.WIDTH, MineSweeper.HEIGHT, "MineSweeper")
         self.board = Board(self)
 
     def pos2cell(self, pos):
@@ -214,6 +208,6 @@ class MineSweeper(Game):
 
     def draw(self):
         if self.board.in_game:
-            self.board.select = self.get_select()
+            self.board.pressed = self.get_select()
 
         self.board.draw()

@@ -31,10 +31,10 @@ class Game:
     def __init__(self, width, height, caption, fps=60):
         pygame.init()
         pygame.display.set_caption(caption)
+        self.screen = pygame.display.set_mode((width, height))
         self.width = width
         self.height = height
         self.fps = fps
-        self.screen = pygame.display.set_mode((self.width, self.height))
         self.counter = 0
 
     def debug(self, msg, color=Color.BLACK, fontsize=36):
