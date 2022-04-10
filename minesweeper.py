@@ -186,7 +186,7 @@ class MineSweeper(Game):
                 elif event.button == 3:
                     cell.flag()
 
-    def get_select(self):
+    def get_pressed(self):
         select = []
         if pygame.mouse.get_pressed()[0] == 1:
             select.append(self.pos2cell(pygame.mouse.get_pos()))
@@ -196,6 +196,6 @@ class MineSweeper(Game):
 
     def draw(self):
         if self.board.in_game:
-            self.board.pressed = self.get_select()
+            self.board.pressed = self.get_pressed()
 
         self.board.draw()
